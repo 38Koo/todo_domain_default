@@ -18,8 +18,6 @@ export class ItemRepositoryImpl implements ItemRepository {
   async findAll(): Promise<Item[]> {
     const { rows } = await turso.execute("SELECT * FROM items");
 
-    console.log(rows);
-
     return rows.map((row) => toItem(row));
   }
   save(item: Item): Promise<void> {}

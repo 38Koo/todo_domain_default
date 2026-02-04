@@ -1,4 +1,6 @@
 import type { ItemRepository } from "../domain/ItemRepository.js";
+import { InvalidIdError } from "./error/InvalidIdError.js";
+import { NoItemError } from "./error/NoItemError.js";
 
 type ItemDTO = {
   id: string;
@@ -52,14 +54,13 @@ export class ItemUsecase {
   }: AddItemInput): Promise<AddItemOutput> {
     const isValidId = Number.isNaN(Number(id));
     if (isValidId) {
-      // TODO: Errorクラス化
-      throw new Error("Invalid ID");
+      throw new InvalidIdError();
     }
     const validId = Number(id);
     const item = await this.ItemRepository.find(validId);
 
     if (!item) {
-      throw new Error("Item not found");
+      throw new NoItemError();
     }
 
     console.log(item);
