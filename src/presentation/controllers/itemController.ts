@@ -13,7 +13,7 @@ ItemController.get("/", async (c) => {
   try {
     const result = await iu.getItemList();
 
-    return c.json({ items: result });
+    return c.json(result);
   } catch (error) {
     if (error instanceof InvalidIdError) {
       return c.json({ message: error.message }, 400);
@@ -21,6 +21,28 @@ ItemController.get("/", async (c) => {
     if (error instanceof NoItemError) {
       return c.json({ message: error.message }, 404);
     }
+    return c.json({ message: "Internal Server Error" }, 500);
+  }
+});
+
+ItemController.get("/:id", async (c) => {
+  const ir = new ItemRepositoryImpl();
+  const iu = new ItemUsecase(ir);
+
+  try {
+    const itemId = c.req.param("id");
+
+    const Item = await iu.getItemById({ itemId });
+
+    return c.json(Item);
+  } catch (error) {
+    if (error instanceof InvalidIdError) {
+      return c.json({ message: error.message }, 400);
+    }
+    if (error instanceof NoItemError) {
+      return c.json({ message: error.message }, 404);
+    }
+    return c.json({ message: "Internal Server Error" }, 500);
   }
 });
 

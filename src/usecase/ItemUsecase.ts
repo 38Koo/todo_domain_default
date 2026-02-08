@@ -12,6 +12,13 @@ type ItemDTO = {
 type GetItemListOutput = {
   items: ItemDTO[];
 };
+type GetItemByIdInput = {
+  itemId: string;
+};
+
+type GetItemByIdOutput = {
+  item: ItemDTO;
+};
 
 type AddItemInput = {
   id: string;
@@ -46,12 +53,30 @@ export class ItemUsecase {
 
     return { items: itemDTOs };
   }
-  async addItem({
-    id,
-    title,
-    content,
-    isCompleted,
-  }: AddItemInput): Promise<AddItemOutput> {
+
+  async getItemById({ itemId }: GetItemByIdInput): Promise<GetItemByIdOutput> {
+    const isValidId = Number.isNaN(Number(itemId));
+    if (isValidId) {
+      throw new InvalidIdError();
+    }
+    const validId = Number(itemId);
+    const item = await this.ItemRepository.find(validId);
+
+    if (!item) {
+      throw new NoItemError();
+    }
+
+    return {
+      item: {
+        id: item["id"],
+        title: item["title"],
+        content: item["content"],
+        isCompleted: item["isCompleted"],
+      },
+    };
+  }
+
+  async addItem({ id, title, content, isCompleted }: AddItemInput): Promise<AddItemOutput> {
     const isValidId = Number.isNaN(Number(id));
     if (isValidId) {
       throw new InvalidIdError();
