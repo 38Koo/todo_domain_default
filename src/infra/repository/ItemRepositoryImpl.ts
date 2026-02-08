@@ -45,7 +45,13 @@ export class ItemRepositoryImpl implements ItemRepository {
     }
   }
 
-  remove(item: Item): Promise<void> {}
+  async delete(itemId: number): Promise<void> {
+    try {
+      return await turso.execute("DELETE FROM items WHERE id = ?", [itemId]).then(() => {});
+    } catch (error) {
+      throw new RepositoryError(`Failed to delete item (id: ${itemId})`);
+    }
+  }
 }
 
 function toItem(row: Row): Item {

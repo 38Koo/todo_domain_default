@@ -45,6 +45,10 @@ type UpdateItemOutput = {
   item: ItemDTO;
 };
 
+type RemoveItemInput = {
+  itemId: string;
+};
+
 export class ItemUsecase {
   private ItemRepository: ItemRepository;
   constructor(ItemRepository: ItemRepository) {
@@ -209,5 +213,26 @@ export class ItemUsecase {
     }
   }
 
-  removeItem(item: any): void {}
+  async removeItem({itemId}: RemoveItemInput): Promise<void> {
+    const isValidId = Number.isNaN(Number(itemId));
+
+    if (isValidId) {
+      throw new InvalidIdError();
+    }
+    const validId = Number(itemId)
+
+    try {
+      const item = await this.ItemRepository.find(validId);
+      if (!item) {
+        throw new NoItemError();
+      }
+
+      await this.ItemRepository.delete(validId);
+    } catch (error) {
+      if (error instanceof RepositoryError) {
+        throw new ItemRepositoryFailedError(error.message);
+      }
+      throw error;
+    }
+  }
 }

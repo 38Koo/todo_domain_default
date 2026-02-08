@@ -88,4 +88,28 @@ ItemController.post("/:id", async (c) => {
   }
 });
 
+ItemController.delete("/:id", async (c) => {
+  const ir = new ItemRepositoryImpl();
+  const iu = new ItemUsecase(ir);
+
+  try {
+    const itemId = c.req.param("id");
+    
+    await iu.removeItem({ itemId });
+    
+    return c.json({ message: "Item deleted successfully" }, 200);
+  } catch (error) {
+    if (error instanceof InvalidIdError) {
+      return c.json({ message: error.message }, 400);
+    }
+    if (error instanceof NoItemError) {
+      return c.json({ message: error.message }, 404);
+    }
+    if (error instanceof ItemRepositoryFailedError) {
+      return c.json({ message: error.message }, 500);
+    }
+    return c.json({ message: "Internal Server Error" }, 500);
+  }
+})
+
 export { ItemController };
