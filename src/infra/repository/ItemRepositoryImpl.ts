@@ -1,11 +1,11 @@
-import type { ResultSet, Row } from "@libsql/client";
+import type { Row } from "@libsql/client";
 import { Item } from "../../domain/Item.js";
 import type { ItemRepository } from "../../domain/ItemRepository.js";
 import { turso } from "../db/clinent.js";
 import { RepositoryError } from "../error/RepositoryError.js";
 
 export class ItemRepositoryImpl implements ItemRepository {
-  async find(id: number): Promise<Item | null> {
+  async find(id: string): Promise<Item | null> {
     try {
       const { rows } = await turso.execute("SELECT * FROM items WHERE id = ?", [id]);
 
@@ -38,14 +38,14 @@ export class ItemRepositoryImpl implements ItemRepository {
                 title = excluded.title,
                 content = excluded.content,
                 is_completed = excluded.is_completed`,
-        args: [Number(item.id), item.title, item.content, item.isCompleted ? 1 : 0],
+        args: [item.id, item.title, item.content, item.isCompleted ? 1 : 0],
       });
     } catch (error) {
       throw new RepositoryError(`Failed to save item (id: ${item.id})`);
     }
   }
 
-  async delete(itemId: number): Promise<void> {
+  async delete(itemId: string): Promise<void> {
     try {
       return await turso.execute("DELETE FROM items WHERE id = ?", [itemId]).then(() => {});
     } catch (error) {

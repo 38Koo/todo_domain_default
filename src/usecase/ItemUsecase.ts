@@ -1,9 +1,11 @@
+import { Item } from "../domain/Item.js";
 import type { ItemRepository } from "../domain/ItemRepository.js";
 import { RepositoryError } from "../infra/error/RepositoryError.js";
 import { InvalidIdError } from "./error/InvalidIdError.js";
 import { InvalidUpdateContentsError } from "./error/InvalidUpdateContentsError.js";
 import { ItemRepositoryFailedError } from "./error/ItemRepositoryFailedError.js";
 import { NoItemError } from "./error/NoItemError.js";
+import { NoRequiredFieldError } from "./error/NoRequiredFieldError.js";
 
 type ItemDTO = {
   id: string;
@@ -24,10 +26,8 @@ type GetItemByIdOutput = {
 };
 
 type AddItemInput = {
-  id: string;
-  title?: string;
-  content?: string;
-  isCompleted?: boolean;
+  title: string;
+  content: string;
 };
 
 type AddItemOutput = {
@@ -80,14 +80,12 @@ export class ItemUsecase {
   }
 
   async getItemById({ itemId }: GetItemByIdInput): Promise<GetItemByIdOutput> {
-    const isValidId = Number.isNaN(Number(itemId));
-    if (isValidId) {
+    if (!itemId) {
       throw new InvalidIdError();
     }
-    const validId = Number(itemId);
 
     try {
-      const item = await this.ItemRepository.find(validId);
+      const item = await this.ItemRepository.find(itemId);
 
       if (!item) {
         throw new NoItemError();
@@ -109,33 +107,17 @@ export class ItemUsecase {
     }
   }
 
-  async addItem({ id, title, content, isCompleted }: AddItemInput): Promise<AddItemOutput> {
-    const isValidId = Number.isNaN(Number(id));
-    if (isValidId) {
-      throw new InvalidIdError();
-    }
-    const validId = Number(id);
-
+  async addItem({ title, content }: AddItemInput): Promise<AddItemOutput> {
     try {
-      const item = await this.ItemRepository.find(validId);
-
-      if (!item) {
-        throw new NoItemError();
+      console.log(2);
+      
+      if (!title && !content) {
+        throw new NoRequiredFieldError();
       }
 
-      console.log(item);
-
-      if (title) {
-        item.updateTitle(title);
-      }
-
-      if (content) {
-        item.updateContent(content);
-      }
-
-      if (isCompleted) {
-        item.toggleCompletion();
-      }
+      console.log(3);
+      
+      const item = Item.create(title, content);
 
       await this.ItemRepository.save(item);
 
@@ -160,15 +142,12 @@ export class ItemUsecase {
     content,
     isCompleted,
   }: UpdateItemInput): Promise<UpdateItemOutput> {
-    const isValidId = Number.isNaN(Number(itemId));
-
-    if (isValidId) {
+    if (!itemId) {
       throw new InvalidIdError();
     }
-    const validId = Number(itemId);
 
     try {
-      const item = await this.ItemRepository.find(validId);
+      const item = await this.ItemRepository.find(itemId);
       if (!item) {
         throw new NoItemError();
       }
@@ -192,7 +171,7 @@ export class ItemUsecase {
       }
       await this.ItemRepository.save(item);
 
-      const updatedItem = await this.ItemRepository.find(validId);
+      const updatedItem = await this.ItemRepository.find(itemId);
       if (!updatedItem) {
         throw new NoItemError();
       }
@@ -214,20 +193,17 @@ export class ItemUsecase {
   }
 
   async removeItem({itemId}: RemoveItemInput): Promise<void> {
-    const isValidId = Number.isNaN(Number(itemId));
-
-    if (isValidId) {
+    if (!itemId) {
       throw new InvalidIdError();
     }
-    const validId = Number(itemId)
 
     try {
-      const item = await this.ItemRepository.find(validId);
+      const item = await this.ItemRepository.find(itemId);
       if (!item) {
         throw new NoItemError();
       }
 
-      await this.ItemRepository.delete(validId);
+      await this.ItemRepository.delete(itemId);
     } catch (error) {
       if (error instanceof RepositoryError) {
         throw new ItemRepositoryFailedError(error.message);

@@ -4,15 +4,16 @@ export class Item {
   public content: string;
   public isCompleted: boolean;
 
-  private constructor(id: string, title: string, content: string, isCompleted: boolean) {
+  private constructor(id: string, title: string, content: string, isCompleted?: boolean) {
     this.id = id;
     this.title = title;
     this.content = content;
-    this.isCompleted = isCompleted;
+    this.isCompleted = isCompleted ?? false;
   }
 
-  static create(generateId: () => string, title: string, content: string): Item {
-    return new Item(generateId(), title, content, false);
+  static create(title: string, content: string): Item {
+    const id = crypto.randomUUID();
+    return new Item(id, title, content, false);
   }
 
   static reconstruct(id: string, title: string, content: string, isCompleted: boolean): Item {
