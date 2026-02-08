@@ -2,35 +2,47 @@ import type { ResultSet, Row } from "@libsql/client";
 import { Item } from "../../domain/Item.js";
 import type { ItemRepository } from "../../domain/ItemRepository.js";
 import { turso } from "../db/clinent.js";
+import { RepositoryError } from "../error/RepositoryError.js";
 
 export class ItemRepositoryImpl implements ItemRepository {
   async find(id: number): Promise<Item | null> {
-    const { rows } = await turso.execute("SELECT * FROM items WHERE id = ?", [id]);
+    try {
+      const { rows } = await turso.execute("SELECT * FROM items WHERE id = ?", [id]);
 
-    if (rows.length > 0) {
-      return toItem(rows[0]);
+      if (rows.length > 0) {
+        return toItem(rows[0]);
+      }
+
+      return null;
+    } catch (error) {
+      throw new RepositoryError(`Failed to find item (id: ${id})`);
     }
-
-    return null;
   }
-  async findAll(): Promise<Item[]> {
-    const { rows } = await turso.execute("SELECT * FROM items");
 
-    return rows.map((row) => toItem(row));
+  async findAll(): Promise<Item[]> {
+    try {
+      const { rows } = await turso.execute("SELECT * FROM items");
+
+      return rows.map((row) => toItem(row));
+    } catch (error) {
+      throw new RepositoryError("Failed to fetch items");
+    }
   }
 
   async save(item: Item): Promise<void> {
-    const result = await turso.execute({
-      sql: `INSERT INTO items (id, title, content, is_completed)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-              title = excluded.title,
-              content = excluded.content,
-              is_completed = excluded.is_completed`,
-      args: [Number(item.id), item.title, item.content, item.isCompleted ? 1 : 0],
-    });
-
-    return;
+    try {
+      await turso.execute({
+        sql: `INSERT INTO items (id, title, content, is_completed)
+              VALUES (?, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                title = excluded.title,
+                content = excluded.content,
+                is_completed = excluded.is_completed`,
+        args: [Number(item.id), item.title, item.content, item.isCompleted ? 1 : 0],
+      });
+    } catch (error) {
+      throw new RepositoryError(`Failed to save item (id: ${item.id})`);
+    }
   }
 
   remove(item: Item): Promise<void> {}

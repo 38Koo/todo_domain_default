@@ -1,6 +1,8 @@
 import type { ItemRepository } from "../domain/ItemRepository.js";
+import { RepositoryError } from "../infra/error/RepositoryError.js";
 import { InvalidIdError } from "./error/InvalidIdError.js";
 import { InvalidUpdateContentsError } from "./error/InvalidUpdateContentsError.js";
+import { ItemRepositoryFailedError } from "./error/ItemRepositoryFailedError.js";
 import { NoItemError } from "./error/NoItemError.js";
 
 type ItemDTO = {
@@ -50,20 +52,27 @@ export class ItemUsecase {
   }
 
   async getItemList(): Promise<GetItemListOutput> {
-    const items = await this.ItemRepository.findAll();
+    try {
+      const items = await this.ItemRepository.findAll();
 
-    if (items.length === 0) {
-      return { items: [] };
+      if (items.length === 0) {
+        return { items: [] };
+      }
+
+      const itemDTOs = items.map((item) => ({
+        id: item["id"],
+        title: item["title"],
+        content: item["content"],
+        isCompleted: item["isCompleted"],
+      }));
+
+      return { items: itemDTOs };
+    } catch (error) {
+      if (error instanceof RepositoryError) {
+        throw new ItemRepositoryFailedError(error.message);
+      }
+      throw error;
     }
-
-    const itemDTOs = items.map((item) => ({
-      id: item["id"],
-      title: item["title"],
-      content: item["content"],
-      isCompleted: item["isCompleted"],
-    }));
-
-    return { items: itemDTOs };
   }
 
   async getItemById({ itemId }: GetItemByIdInput): Promise<GetItemByIdOutput> {
@@ -72,20 +81,28 @@ export class ItemUsecase {
       throw new InvalidIdError();
     }
     const validId = Number(itemId);
-    const item = await this.ItemRepository.find(validId);
 
-    if (!item) {
-      throw new NoItemError();
+    try {
+      const item = await this.ItemRepository.find(validId);
+
+      if (!item) {
+        throw new NoItemError();
+      }
+
+      return {
+        item: {
+          id: item["id"],
+          title: item["title"],
+          content: item["content"],
+          isCompleted: item["isCompleted"],
+        },
+      };
+    } catch (error) {
+      if (error instanceof RepositoryError) {
+        throw new ItemRepositoryFailedError(error.message);
+      }
+      throw error;
     }
-
-    return {
-      item: {
-        id: item["id"],
-        title: item["title"],
-        content: item["content"],
-        isCompleted: item["isCompleted"],
-      },
-    };
   }
 
   async addItem({ id, title, content, isCompleted }: AddItemInput): Promise<AddItemOutput> {
@@ -94,36 +111,44 @@ export class ItemUsecase {
       throw new InvalidIdError();
     }
     const validId = Number(id);
-    const item = await this.ItemRepository.find(validId);
 
-    if (!item) {
-      throw new NoItemError();
+    try {
+      const item = await this.ItemRepository.find(validId);
+
+      if (!item) {
+        throw new NoItemError();
+      }
+
+      console.log(item);
+
+      if (title) {
+        item.updateTitle(title);
+      }
+
+      if (content) {
+        item.updateContent(content);
+      }
+
+      if (isCompleted) {
+        item.toggleCompletion();
+      }
+
+      await this.ItemRepository.save(item);
+
+      return {
+        item: {
+          id: item["id"],
+          title: item["title"],
+          content: item["content"],
+          isCompleted: item["isCompleted"],
+        },
+      };
+    } catch (error) {
+      if (error instanceof RepositoryError) {
+        throw new ItemRepositoryFailedError(error.message);
+      }
+      throw error;
     }
-
-    console.log(item);
-
-    if (title) {
-      item.updateTitle(title);
-    }
-
-    if (content) {
-      item.updateContent(content);
-    }
-
-    if (isCompleted) {
-      item.toggleCompletion();
-    }
-
-    await this.ItemRepository.save(item);
-
-    return {
-      item: {
-        id: item["id"],
-        title: item["title"],
-        content: item["content"],
-        isCompleted: item["isCompleted"],
-      },
-    };
   }
   async updateItem({
     itemId,
@@ -138,43 +163,50 @@ export class ItemUsecase {
     }
     const validId = Number(itemId);
 
-    const item = await this.ItemRepository.find(validId);
-    if (!item) {
-      throw new NoItemError();
-    }
-
-    if (!title && !content && isCompleted === undefined) {
-      throw new InvalidUpdateContentsError();
-    }
-
-    if (title) {
-      item.updateTitle(title);
-    }
-
-    if (content) {
-      item.updateContent(content);
-    }
-
-    if (isCompleted !== undefined) {
-      if (item.isCompleted !== isCompleted) {
-        item.toggleCompletion();
+    try {
+      const item = await this.ItemRepository.find(validId);
+      if (!item) {
+        throw new NoItemError();
       }
-    }
-    await this.ItemRepository.save(item);
 
-    const updatedItem = await this.ItemRepository.find(validId);
-    if (!updatedItem) {
-      throw new NoItemError();
-    }
+      if (!title && !content && isCompleted === undefined) {
+        throw new InvalidUpdateContentsError();
+      }
 
-    return {
-      item: {
-        id: updatedItem["id"],
-        title: updatedItem["title"],
-        content: updatedItem["content"],
-        isCompleted: updatedItem["isCompleted"],
-      },
-    };
+      if (title) {
+        item.updateTitle(title);
+      }
+
+      if (content) {
+        item.updateContent(content);
+      }
+
+      if (isCompleted !== undefined) {
+        if (item.isCompleted !== isCompleted) {
+          item.toggleCompletion();
+        }
+      }
+      await this.ItemRepository.save(item);
+
+      const updatedItem = await this.ItemRepository.find(validId);
+      if (!updatedItem) {
+        throw new NoItemError();
+      }
+
+      return {
+        item: {
+          id: updatedItem["id"],
+          title: updatedItem["title"],
+          content: updatedItem["content"],
+          isCompleted: updatedItem["isCompleted"],
+        },
+      };
+    } catch (error) {
+      if (error instanceof RepositoryError) {
+        throw new ItemRepositoryFailedError(error.message);
+      }
+      throw error;
+    }
   }
 
   removeItem(item: any): void {}
