@@ -5,9 +5,7 @@ import { turso } from "../db/clinent.js";
 
 export class ItemRepositoryImpl implements ItemRepository {
   async find(id: number): Promise<Item | null> {
-    const { rows } = await turso.execute("SELECT * FROM items WHERE id = ?", [
-      id,
-    ]);
+    const { rows } = await turso.execute("SELECT * FROM items WHERE id = ?", [id]);
 
     if (rows.length > 0) {
       return toItem(rows[0]);
