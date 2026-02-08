@@ -1,5 +1,6 @@
 import type { ItemRepository } from "../domain/ItemRepository.js";
 import { InvalidIdError } from "./error/InvalidIdError.js";
+import { InvalidUpdateContentsError } from "./error/InvalidUpdateContentsError.js";
 import { NoItemError } from "./error/NoItemError.js";
 
 type ItemDTO = {
@@ -28,6 +29,17 @@ type AddItemInput = {
 };
 
 type AddItemOutput = {
+  item: ItemDTO;
+};
+
+type UpdateItemInput = {
+  itemId: string;
+  title?: string;
+  content?: string;
+  isCompleted?: boolean;
+};
+
+type UpdateItemOutput = {
   item: ItemDTO;
 };
 
@@ -113,6 +125,57 @@ export class ItemUsecase {
       },
     };
   }
+  async updateItem({
+    itemId,
+    title,
+    content,
+    isCompleted,
+  }: UpdateItemInput): Promise<UpdateItemOutput> {
+    const isValidId = Number.isNaN(Number(itemId));
+
+    if (isValidId) {
+      throw new InvalidIdError();
+    }
+    const validId = Number(itemId);
+
+    const item = await this.ItemRepository.find(validId);
+    if (!item) {
+      throw new NoItemError();
+    }
+
+    if (!title && !content && isCompleted === undefined) {
+      throw new InvalidUpdateContentsError();
+    }
+
+    if (title) {
+      item.updateTitle(title);
+    }
+
+    if (content) {
+      item.updateContent(content);
+    }
+
+    if (isCompleted !== undefined) {
+      if (item.isCompleted !== isCompleted) {
+        item.toggleCompletion();
+      }
+    }
+    await this.ItemRepository.save(item);
+
+    const updatedItem = await this.ItemRepository.find(validId);
+    if (!updatedItem) {
+      throw new NoItemError();
+    }
+
+    return {
+      item: {
+        id: updatedItem["id"],
+        title: updatedItem["title"],
+        content: updatedItem["content"],
+        isCompleted: updatedItem["isCompleted"],
+      },
+    };
+  }
+
   removeItem(item: any): void {}
-  updateItem(item: any): void {}
 }

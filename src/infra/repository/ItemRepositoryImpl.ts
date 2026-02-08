@@ -1,4 +1,4 @@
-import type { Row } from "@libsql/client";
+import type { ResultSet, Row } from "@libsql/client";
 import { Item } from "../../domain/Item.js";
 import type { ItemRepository } from "../../domain/ItemRepository.js";
 import { turso } from "../db/clinent.js";
@@ -18,7 +18,21 @@ export class ItemRepositoryImpl implements ItemRepository {
 
     return rows.map((row) => toItem(row));
   }
-  save(item: Item): Promise<void> {}
+
+  async save(item: Item): Promise<void> {
+    const result = await turso.execute({
+      sql: `INSERT INTO items (id, title, content, is_completed)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+              title = excluded.title,
+              content = excluded.content,
+              is_completed = excluded.is_completed`,
+      args: [Number(item.id), item.title, item.content, item.isCompleted ? 1 : 0],
+    });
+
+    return;
+  }
+
   remove(item: Item): Promise<void> {}
 }
 

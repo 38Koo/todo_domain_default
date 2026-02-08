@@ -1,8 +1,8 @@
 export class Item {
-  private id: string;
-  private title: string;
-  private content: string;
-  private isCompleted: boolean;
+  public id: string;
+  public title: string;
+  public content: string;
+  public isCompleted: boolean;
 
   private constructor(id: string, title: string, content: string, isCompleted: boolean) {
     this.id = id;
