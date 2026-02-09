@@ -38,7 +38,7 @@ export class ItemRepositoryImpl implements ItemRepository {
                 title = excluded.title,
                 content = excluded.content,
                 is_completed = excluded.is_completed`,
-        args: [item.id, item.title, item.content, item.isCompleted ? 1 : 0],
+        args: [item.id.toString(), item.title, item.content, item.isCompleted ? 1 : 0],
       });
     } catch (error) {
       throw new RepositoryError(`Failed to save item (id: ${item.id})`);

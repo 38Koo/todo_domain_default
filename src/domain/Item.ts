@@ -1,10 +1,12 @@
+import { ItemId } from "./ItemId.js";
+
 export class Item {
-  public id: string;
+  public readonly id: ItemId;
   public title: string;
   public content: string;
   public isCompleted: boolean;
 
-  private constructor(id: string, title: string, content: string, isCompleted?: boolean) {
+  private constructor(id: ItemId, title: string, content: string, isCompleted?: boolean) {
     this.id = id;
     this.title = title;
     this.content = content;
@@ -12,12 +14,11 @@ export class Item {
   }
 
   static create(title: string, content: string): Item {
-    const id = crypto.randomUUID();
-    return new Item(id, title, content, false);
+    return new Item(ItemId.generate(), title, content, false);
   }
 
   static reconstruct(id: string, title: string, content: string, isCompleted: boolean): Item {
-    return new Item(id, title, content, isCompleted);
+    return new Item(ItemId.reconstruct(id), title, content, isCompleted);
   }
 
   toggleCompletion(): void {

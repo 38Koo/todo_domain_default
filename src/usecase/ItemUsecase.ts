@@ -1,4 +1,5 @@
 import { Item } from "../domain/Item.js";
+import { ItemId } from "../domain/ItemId.js";
 import type { ItemRepository } from "../domain/ItemRepository.js";
 import { RepositoryError } from "../infra/error/RepositoryError.js";
 import { InvalidIdError } from "./error/InvalidIdError.js";
@@ -49,6 +50,23 @@ type RemoveItemInput = {
   itemId: string;
 };
 
+function toItemDTO(item: Item): ItemDTO {
+  return {
+    id: item.id.toString(),
+    title: item.title,
+    content: item.content,
+    isCompleted: item.isCompleted,
+  };
+}
+
+function validateItemId(itemId: string): ItemId {
+  try {
+    return ItemId.reconstruct(itemId);
+  } catch {
+    throw new InvalidIdError();
+  }
+}
+
 export class ItemUsecase {
   private ItemRepository: ItemRepository;
   constructor(ItemRepository: ItemRepository) {
@@ -63,14 +81,7 @@ export class ItemUsecase {
         return { items: [] };
       }
 
-      const itemDTOs = items.map((item) => ({
-        id: item["id"],
-        title: item["title"],
-        content: item["content"],
-        isCompleted: item["isCompleted"],
-      }));
-
-      return { items: itemDTOs };
+      return { items: items.map(toItemDTO) };
     } catch (error) {
       if (error instanceof RepositoryError) {
         throw new ItemRepositoryFailedError(error.message);
@@ -80,9 +91,7 @@ export class ItemUsecase {
   }
 
   async getItemById({ itemId }: GetItemByIdInput): Promise<GetItemByIdOutput> {
-    if (!itemId) {
-      throw new InvalidIdError();
-    }
+    validateItemId(itemId);
 
     try {
       const item = await this.ItemRepository.find(itemId);
@@ -91,14 +100,7 @@ export class ItemUsecase {
         throw new NoItemError();
       }
 
-      return {
-        item: {
-          id: item["id"],
-          title: item["title"],
-          content: item["content"],
-          isCompleted: item["isCompleted"],
-        },
-      };
+      return { item: toItemDTO(item) };
     } catch (error) {
       if (error instanceof RepositoryError) {
         throw new ItemRepositoryFailedError(error.message);
@@ -109,26 +111,15 @@ export class ItemUsecase {
 
   async addItem({ title, content }: AddItemInput): Promise<AddItemOutput> {
     try {
-      console.log(2);
-      
       if (!title && !content) {
         throw new NoRequiredFieldError();
       }
 
-      console.log(3);
-      
       const item = Item.create(title, content);
 
       await this.ItemRepository.save(item);
 
-      return {
-        item: {
-          id: item["id"],
-          title: item["title"],
-          content: item["content"],
-          isCompleted: item["isCompleted"],
-        },
-      };
+      return { item: toItemDTO(item) };
     } catch (error) {
       if (error instanceof RepositoryError) {
         throw new ItemRepositoryFailedError(error.message);
@@ -142,9 +133,7 @@ export class ItemUsecase {
     content,
     isCompleted,
   }: UpdateItemInput): Promise<UpdateItemOutput> {
-    if (!itemId) {
-      throw new InvalidIdError();
-    }
+    validateItemId(itemId);
 
     try {
       const item = await this.ItemRepository.find(itemId);
@@ -176,14 +165,7 @@ export class ItemUsecase {
         throw new NoItemError();
       }
 
-      return {
-        item: {
-          id: updatedItem["id"],
-          title: updatedItem["title"],
-          content: updatedItem["content"],
-          isCompleted: updatedItem["isCompleted"],
-        },
-      };
+      return { item: toItemDTO(updatedItem) };
     } catch (error) {
       if (error instanceof RepositoryError) {
         throw new ItemRepositoryFailedError(error.message);
@@ -193,9 +175,7 @@ export class ItemUsecase {
   }
 
   async removeItem({itemId}: RemoveItemInput): Promise<void> {
-    if (!itemId) {
-      throw new InvalidIdError();
-    }
+    validateItemId(itemId);
 
     try {
       const item = await this.ItemRepository.find(itemId);
