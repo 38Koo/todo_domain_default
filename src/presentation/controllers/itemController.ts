@@ -26,7 +26,7 @@ ItemController.openapi(getItemListRoute, async (c) => {
   try {
     const result = await iu.getItemList();
 
-    return c.json({ items: "2" }, 200);
+    return c.json(result, 200);
   } catch (error) {
     if (error instanceof InvalidIdError) {
       return c.json({ message: error.message }, 400);
@@ -40,28 +40,6 @@ ItemController.openapi(getItemListRoute, async (c) => {
     return c.json({ message: "Internal Server Error" }, 500);
   }
 });
-
-// ItemController.get("/", async (c) => {
-//   const ir = new ItemRepositoryImpl();
-//   const iu = new ItemUsecase(ir);
-
-//   try {
-//     const result = await iu.getItemList();
-
-//     return c.json(result);
-//   } catch (error) {
-//     if (error instanceof InvalidIdError) {
-//       return c.json({ message: error.message }, 400);
-//     }
-//     if (error instanceof NoItemError) {
-//       return c.json({ message: error.message }, 404);
-//     }
-//     if (error instanceof ItemRepositoryFailedError) {
-//       return c.json({ message: error.message }, 500);
-//     }
-//     return c.json({ message: "Internal Server Error" }, 500);
-//   }
-// });
 
 ItemController.get("/:id", async (c) => {
   const ir = new ItemRepositoryImpl();
@@ -121,7 +99,12 @@ ItemController.post("/:id", async (c) => {
   try {
     const itemId = c.req.param("id");
     const body = await c.req.json().catch(() => null);
-    if (!body || !body.title || !body.content || body.isCompleted === undefined) {
+    if (
+      !body ||
+      !body.title ||
+      !body.content ||
+      body.isCompleted === undefined
+    ) {
       return c.json({ message: "title and content are required" }, 400);
     }
 

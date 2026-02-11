@@ -1,6 +1,14 @@
 import { createRoute, z } from "@hono/zod-openapi";
 
-const ParamsSchema = z.object({
+const ErrorSchema = z
+  .object({
+    message: z.string().openapi({
+      example: "Error message",
+    }),
+  })
+  .openapi("Error");
+
+const ItemIdSchema = z.object({
   id: z
     .string()
     .min(1)
@@ -37,13 +45,36 @@ export const getItemListRoute = createRoute({
     200: {
       content: {
         "application/json": {
-          schema: ItemSchema.array().openapi("GetItemListResponse"),
+          schema: z.object({
+            items: z.array(ItemSchema),
+          }),
         },
       },
       description: "Successful Response",
     },
-    400: { description: "Bad Request" },
-    404: { description: "Not Found" },
-    500: { description: "Internal Server Error" },
+    400: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: "Bad Request",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: "Not Found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: "Internal Server Error",
+    },
   },
 });
