@@ -174,7 +174,7 @@ export class ItemUsecase {
     }
   }
 
-  async removeItem({itemId}: RemoveItemInput): Promise<void> {
+  async removeItem({ itemId }: RemoveItemInput): Promise<void> {
     validateItemId(itemId);
 
     try {

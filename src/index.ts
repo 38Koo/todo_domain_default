@@ -14,7 +14,7 @@ app.use(
   cors({
     origin: process.env.CLIENT_DOMAIN || "",
     allowHeaders: ["X-Custom-Header"],
-    allowMethods: ["POST", "GET", "OPTIONS","DELETE"],
+    allowMethods: ["POST", "GET", "OPTIONS", "DELETE"],
     exposeHeaders: ["Content-Length"],
     maxAge: 600,
   }),
