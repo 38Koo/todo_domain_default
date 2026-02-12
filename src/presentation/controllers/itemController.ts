@@ -105,7 +105,10 @@ ItemController.post("/:id", async (c) => {
       !body.content ||
       body.isCompleted === undefined
     ) {
-      return c.json({ message: "title and content are required" }, 400);
+      return c.json(
+        { message: "title, content, and isCompleted are required" },
+        400,
+      );
     }
 
     const item = await iu.updateItem({

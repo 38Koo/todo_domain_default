@@ -3,11 +3,14 @@ import { Item } from "../../domain/Item.js";
 import type { ItemRepository } from "../../domain/ItemRepository.js";
 import { turso } from "../db/clinent.js";
 import { RepositoryError } from "../error/RepositoryError.js";
+import type { ItemId } from "../../domain/ItemId.js";
 
 export class ItemRepositoryImpl implements ItemRepository {
-  async find(id: string): Promise<Item | null> {
+  async find(itemId: ItemId): Promise<Item | null> {
     try {
-      const { rows } = await turso.execute("SELECT * FROM items WHERE id = ?", [id]);
+      const { rows } = await turso.execute("SELECT * FROM items WHERE id = ?", [
+        itemId.toString(),
+      ]);
 
       if (rows.length > 0) {
         return toItem(rows[0]);
@@ -15,7 +18,9 @@ export class ItemRepositoryImpl implements ItemRepository {
 
       return null;
     } catch (error) {
-      throw new RepositoryError(`Failed to find item (id: ${id})`);
+      throw new RepositoryError(
+        `Failed to find item (id: ${itemId.toString()})`,
+      );
     }
   }
 
@@ -38,18 +43,27 @@ export class ItemRepositoryImpl implements ItemRepository {
                 title = excluded.title,
                 content = excluded.content,
                 is_completed = excluded.is_completed`,
-        args: [item.id.toString(), item.title, item.content, item.isCompleted ? 1 : 0],
+        args: [
+          item.id.toString(),
+          item.title,
+          item.content,
+          item.isCompleted ? 1 : 0,
+        ],
       });
     } catch (error) {
       throw new RepositoryError(`Failed to save item (id: ${item.id})`);
     }
   }
 
-  async delete(itemId: string): Promise<void> {
+  async delete(itemId: ItemId): Promise<void> {
     try {
-      return await turso.execute("DELETE FROM items WHERE id = ?", [itemId]).then(() => {});
+      return await turso
+        .execute("DELETE FROM items WHERE id = ?", [itemId.toString()])
+        .then(() => {});
     } catch (error) {
-      throw new RepositoryError(`Failed to delete item (id: ${itemId})`);
+      throw new RepositoryError(
+        `Failed to delete item (id: ${itemId.toString()})`,
+      );
     }
   }
 }

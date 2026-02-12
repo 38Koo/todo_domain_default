@@ -91,10 +91,10 @@ export class ItemUsecase {
   }
 
   async getItemById({ itemId }: GetItemByIdInput): Promise<GetItemByIdOutput> {
-    validateItemId(itemId);
+    const validItemId = validateItemId(itemId);
 
     try {
-      const item = await this.ItemRepository.find(itemId);
+      const item = await this.ItemRepository.find(validItemId);
 
       if (!item) {
         throw new NoItemError();
@@ -133,10 +133,10 @@ export class ItemUsecase {
     content,
     isCompleted,
   }: UpdateItemInput): Promise<UpdateItemOutput> {
-    validateItemId(itemId);
+    const validItemId = validateItemId(itemId);
 
     try {
-      const item = await this.ItemRepository.find(itemId);
+      const item = await this.ItemRepository.find(validItemId);
       if (!item) {
         throw new NoItemError();
       }
@@ -160,7 +160,7 @@ export class ItemUsecase {
       }
       await this.ItemRepository.save(item);
 
-      const updatedItem = await this.ItemRepository.find(itemId);
+      const updatedItem = await this.ItemRepository.find(item.id);
       if (!updatedItem) {
         throw new NoItemError();
       }
@@ -175,15 +175,15 @@ export class ItemUsecase {
   }
 
   async removeItem({ itemId }: RemoveItemInput): Promise<void> {
-    validateItemId(itemId);
+    const validItemId = validateItemId(itemId);
 
     try {
-      const item = await this.ItemRepository.find(itemId);
+      const item = await this.ItemRepository.find(validItemId);
       if (!item) {
         throw new NoItemError();
       }
 
-      await this.ItemRepository.delete(itemId);
+      await this.ItemRepository.delete(validItemId);
     } catch (error) {
       if (error instanceof RepositoryError) {
         throw new ItemRepositoryFailedError(error.message);
